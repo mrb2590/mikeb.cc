@@ -8,10 +8,16 @@
 	html, body {
 		margin: 0;
 		padding: 0;
+		width: 100%;
+		height: 100%;
 		text-align: center;
 	}
 	canvas {
 		width: 100%;
+	}
+	body.hide-cursor,
+	body.hide-cursor * {
+		cursor: none;
 	}
 </style>
 </head>
@@ -26,7 +32,7 @@
 	var ctx;
 
 	// game settings
-	const frameRate = 60;
+	const tickRate = 60;
 	var difficulty = 2;
 
 	// the ball
@@ -71,7 +77,7 @@
 		setInterval(function() {
 			moveEverything();
 			drawEverything();
-		}, 1000 / frameRate);
+		}, 1000 / tickRate);
 
 		// Mouse movement listener
 		// and setup touch to mimic mouse movement
@@ -88,11 +94,13 @@
 			function(evt) {
 				// restart game
 				if (showingWinScreen) {
+					document.body.className = 'hide-cursor';
 					showingWinScreen = false;
 					showingStartScreen = true;
 					player1Score = 0;
 					player2Score = 0;
 				} else if (showingStartScreen) {
+					document.body.className = 'hide-cursor';
 					showingStartScreen = false;
 				}
 			}
@@ -196,6 +204,7 @@
 		drawBackground();
 
 		if (showingWinScreen) {
+			document.body.className = '';
 			var txt;
 			if (player1Score >= winningScore) {
 				txt = "Left Player Wins";
@@ -204,8 +213,10 @@
 			}
 			colorTxt(txt, canvas.width / 2, canvas.height / 2,
 				"50px Arial", "center", "middle", "white");
+
 			return;
 		} else if (showingStartScreen) {
+			document.body.className = '';
 			colorTxt("START ROUND", canvas.width / 2, canvas.height / 2,
 				"50px Arial", "center", "middle", "white");
 			return;
