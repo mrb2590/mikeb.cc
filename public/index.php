@@ -28,8 +28,8 @@
 
 	// the ball
 	const ballDiameter = 30;
-	var ballX = 50;
-	var ballY = 50;
+	var ballX = canvas.width / 2;
+	var ballY = canvas.height / 2;
 	var ballSpeedX = 15;
 	var ballSpeedY = ballSpeedX / 3;
 
@@ -107,27 +107,13 @@
 		 */
 		drawEverything(); 
 	}
-
-	// function endGame() {
-	// 	if (player1Score >= winningScore || player2Score >= winningScore) {
-
-	// 	}
-	// 	gameOver = true;
-	// 	ballReset();
-	// 	// game over
-	// 	window.setTimeout(function() {
-	// 		drawBackground();
-	// 		colorTxt("GAME OVER", canvas.width / 2, canvas.height / 2,
-	// 			"100px Arial", "center", "middle", "white");
-	// 	}, 1);
-	// 	clearInterval(interval);
-	// }
 	
 	function ballReset() {
 		if (player1Score >= winningScore || player2Score >= winningScore) {
 			showingWinScreen = true;
 		}
-		ballSpeedX = -ballSpeedX; // Reverse starting direction for next round
+		// Reverse starting direction for next round
+		ballSpeedX = (ballSpeedX > 0) ? -15 : 15;
 		ballX = canvas.width / 2;
 		ballY = canvas.height / 2;
 	}
