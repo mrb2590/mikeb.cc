@@ -21,13 +21,16 @@
 
 <script>
 	var canvas = document.getElementById('gameCanvas');
+	canvas.width = window.innerWidth;
+	canvas.height = window.innerHeight;
 	var ctx;
 
 	// game settings
 	const frameRate = 60;
+	var difficulty = 2;
 
 	// the ball
-	const ballDiameter = 30;
+	const ballDiameter = 15;
 	var ballX = canvas.width / 2;
 	var ballY = canvas.height / 2;
 	var ballSpeedX = 15;
@@ -36,11 +39,13 @@
 	// paddles
 	var paddle1Y = 250;
 	var paddle2Y = 250;
-	const paddleHeight = 200;
+	const paddleHeight = 150;
 
 	// Scoring
 	var player1Score = 0;
 	var player2Score = 0;
+	var roundWinnder = 0;
+	var showingStartScreen = true;
 	var showingWinScreen = false;
 	const winningScore = 5;
 
@@ -78,14 +83,17 @@
 			}
 		);
 
-		// Restart game
+		// Restart game/round
 		canvas.addEventListener('mousedown',
 			function(evt) {
 				// restart game
 				if (showingWinScreen) {
 					showingWinScreen = false;
+					showingStartScreen = true;
 					player1Score = 0;
 					player2Score = 0;
+				} else if (showingStartScreen) {
+					showingStartScreen = false;
 				}
 			}
 		);
@@ -111,24 +119,35 @@
 	function ballReset() {
 		if (player1Score >= winningScore || player2Score >= winningScore) {
 			showingWinScreen = true;
+		} else {
+			showingStartScreen = true;
 		}
 		// Reverse starting direction for next round
 		ballSpeedX = (ballSpeedX > 0) ? -15 : 15;
+		ballSpeedY = ballSpeedX / 3;
 		ballX = canvas.width / 2;
 		ballY = canvas.height / 2;
 	}
 
 	function computerMovement() {
 		var paddle2YCenter = paddle2Y + paddleHeight / 2;
-		if (paddle2YCenter < ballY - 35) {
-			paddle2Y += 6;
-		} else if (paddle2YCenter > ballY + 35) {
-			paddle2Y -= 6;
+		if (difficulty == 1) {
+			if (paddle2YCenter < ballY - 35) {
+				paddle2Y += 6;
+			} else if (paddle2YCenter > ballY + 35) {
+				paddle2Y -= 6;
+			}
+		} else if (difficulty === 2) {
+			if (paddle2YCenter < ballY - 30) {
+				paddle2Y += 12;
+			} else if (paddle2YCenter > ballY + 30) {
+				paddle2Y -= 12;
+			}
 		}
 	}
 
 	function moveEverything() {
-		if (showingWinScreen) {
+		if (showingWinScreen || showingStartScreen) {
 			return;
 		}
 
@@ -184,6 +203,10 @@
 				txt = "Right Player Wins";
 			}
 			colorTxt(txt, canvas.width / 2, canvas.height / 2,
+				"50px Arial", "center", "middle", "white");
+			return;
+		} else if (showingStartScreen) {
+			colorTxt("START ROUND", canvas.width / 2, canvas.height / 2,
 				"50px Arial", "center", "middle", "white");
 			return;
 		}
