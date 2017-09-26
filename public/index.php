@@ -15,6 +15,7 @@
 		margin: 15px 0;
 	}
 	a {
+
 		font-size: 40px;
 	}
 </style>
@@ -22,6 +23,9 @@
 <body>
 	<div>
 		<a href="/pong">Pong</a>
+	</div>
+	<div>
+		<a href="/brick-breaker">Brick Breaker</a>
 	</div>
 </body>
 </html>

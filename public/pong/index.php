@@ -28,25 +28,38 @@
 
 <script>
 	var canvas = document.getElementById('gameCanvas');
-	canvas.width = window.innerWidth;
-	canvas.height = window.innerHeight;
 	var ctx;
 
+	// Initial canvas resize
+	canvas.width = window.innerWidth;
+	canvas.height = window.innerHeight;
+
 	// game settings
-	const tickRate = 60;
+	var tickRate = 60;
 	var difficulty = 2;
 
+	// text
+	var defaultGameTextSize = function() { return canvas.width * 0.05; };
+
 	// the ball
-	const ballDiameter = 15;
-	var ballX = canvas.width / 2;
-	var ballY = canvas.height / 2;
-	var ballSpeedX = 15;
-	var ballSpeedY = ballSpeedX / 3;
+	var defaultBallDiameter = function() { return canvas.width * 0.012; }; //15;
+	var defaultBallX = function() { return canvas.width / 2; };
+	var defaultBallY = function() { return canvas.height / 2; };
+	var defaultBallSpeedX = function() { return canvas.width * 0.01; }; //15;
+	var defaultBallSpeedY = function() { return ballSpeedX / 3; };
+
+	var ballDiameter = defaultBallDiameter();
+	var ballX = defaultBallX();
+	var ballY = defaultBallY();
+	var ballSpeedX = defaultBallSpeedX();
+	var ballSpeedY = defaultBallSpeedY();
 
 	// paddles
-	var paddle1Y = 250;
-	var paddle2Y = 250;
-	const paddleHeight = 150;
+	var defaultPaddleHeight = function() { return canvas.height * 0.18; }; //150;
+	var defaultPaddleY = function() { return (canvas.height / 2) - (defaultPaddleHeight() / 2); }; //250;
+
+	var paddle1Y = defaultPaddleY();
+	var paddle2Y = defaultPaddleY();
 
 	// Scoring
 	var player1Score = 0;
@@ -54,7 +67,8 @@
 	var roundWinnder = 0;
 	var showingStartScreen = true;
 	var showingWinScreen = false;
-	const winningScore = 5;
+	var winningScore = 5;
+
 
 	function calculateMousePos(evt) {
 		var rect = canvas.getBoundingClientRect();
@@ -86,26 +100,24 @@
 		canvas.addEventListener('mousemove',
 			function(evt) {
 				var mousePos = calculateMousePos(evt);
-				paddle1Y = mousePos.y - paddleHeight / 2;
+				paddle1Y = mousePos.y - defaultPaddleHeight() / 2;
 			}
 		);
 
 		// Restart game/round
-		canvas.addEventListener('mousedown',
-			function(evt) {
-				// restart game
-				if (showingWinScreen) {
-					document.body.className = 'hide-cursor';
-					showingWinScreen = false;
-					showingStartScreen = true;
-					player1Score = 0;
-					player2Score = 0;
-				} else if (showingStartScreen) {
-					document.body.className = 'hide-cursor';
-					showingStartScreen = false;
-				}
+		canvas.addEventListener('mousedown', function(evt) {
+			// restart game
+			if (showingWinScreen) {
+				document.body.className = 'hide-cursor';
+				showingWinScreen = false;
+				showingStartScreen = true;
+				player1Score = 0;
+				player2Score = 0;
+			} else if (showingStartScreen) {
+				document.body.className = 'hide-cursor';
+				showingStartScreen = false;
 			}
-		);
+		});
 
 	};
 
@@ -132,25 +144,25 @@
 			showingStartScreen = true;
 		}
 		// Reverse starting direction for next round
-		ballSpeedX = (ballSpeedX > 0) ? -15 : 15;
+		ballSpeedX = (ballSpeedX > 0) ? -defaultBallSpeedX() : defaultBallSpeedX();
 		ballSpeedY = ballSpeedX / 3;
-		ballX = canvas.width / 2;
-		ballY = canvas.height / 2;
+		ballX = defaultBallX();
+		ballY = defaultBallY();
 	}
 
 	function computerMovement() {
-		var paddle2YCenter = paddle2Y + paddleHeight / 2;
+		var paddle2YCenter = paddle2Y + defaultPaddleHeight() / 2;
 		if (difficulty == 1) {
-			if (paddle2YCenter < ballY - 35) {
-				paddle2Y += 6;
-			} else if (paddle2YCenter > ballY + 35) {
-				paddle2Y -= 6;
+			if (paddle2YCenter < ballY - (canvas.height * 0.04)) {
+				paddle2Y += canvas.height * 0.013;
+			} else if (paddle2YCenter > ballY + (canvas.height * 0.04)) {
+				paddle2Y -= canvas.height * 0.013;
 			}
 		} else if (difficulty === 2) {
-			if (paddle2YCenter < ballY - 30) {
-				paddle2Y += 12;
-			} else if (paddle2YCenter > ballY + 30) {
-				paddle2Y -= 12;
+			if (paddle2YCenter < ballY - (canvas.height * 0.03)) {
+				paddle2Y += canvas.height * 0.018;
+			} else if (paddle2YCenter > ballY + (canvas.height * 0.03)) {
+				paddle2Y -= canvas.height * 0.018;
 			}
 		}
 	}
@@ -168,11 +180,11 @@
 		ballY += ballSpeedY;
 
 		//left-side ball/wall AND ball/paddle collision
-		if (ballX - ballDiameter < 0) {
-			if (ballY > paddle1Y && ballY < paddle1Y + paddleHeight) {
+		if (ballX - defaultBallDiameter() < 0) {
+			if (ballY > paddle1Y && ballY < paddle1Y + defaultPaddleHeight()) {
 				ballSpeedX = -ballSpeedX;
 
-				deltaY = ballY - (paddle1Y + paddleHeight / 2);
+				deltaY = ballY - (paddle1Y + defaultPaddleHeight() / 2);
 				ballSpeedY = deltaY * 0.35;
 			} else {
 				player2Score++;
@@ -180,11 +192,11 @@
 			}
 		}
 		//right-side ball/wall AND ball/paddle collision
-		if (ballX + ballDiameter > canvas.width) {
-			if (ballY > paddle2Y && ballY < paddle2Y + paddleHeight) {
+		if (ballX + defaultBallDiameter() > canvas.width) {
+			if (ballY > paddle2Y && ballY < paddle2Y + defaultPaddleHeight()) {
 				ballSpeedX = -ballSpeedX;
 
-				deltaY = ballY - (paddle2Y + paddleHeight / 2);
+				deltaY = ballY - (paddle2Y + defaultPaddleHeight() / 2);
 				ballSpeedY = deltaY * 0.35;
 			} else {
 				player1Score++;
@@ -192,11 +204,11 @@
 			}
 		}
 		//top ball/wall collision
-		if (ballY - ballDiameter < 0) {
+		if (ballY - defaultBallDiameter() < 0) {
 			ballSpeedY = -ballSpeedY;
 		}
 		//bottom ball/wall collision
-		if (ballY + ballDiameter > canvas.height) {
+		if (ballY + defaultBallDiameter() > canvas.height) {
 			ballSpeedY = -ballSpeedY;
 		}
 	}
@@ -213,22 +225,22 @@
 				txt = "Right Player Wins";
 			}
 			colorTxt(txt, canvas.width / 2, canvas.height / 2,
-				"50px Arial", "center", "middle", "white");
+				defaultGameTextSize() + "px Arial", "center", "middle", "white");
 
 			return;
 		} else if (showingStartScreen) {
 			document.body.className = '';
 			colorTxt("START ROUND", canvas.width / 2, canvas.height / 2,
-				"50px Arial", "center", "middle", "white");
+				defaultGameTextSize() + "px Arial", "center", "middle", "white");
 			return;
 		}
 		drawNet();
 		// Paddle 1
-		colorRect(0, paddle1Y, 10, paddleHeight, 'white');
-		// Paddle 1
-		colorRect(canvas.width - 10, paddle2Y, 10, paddleHeight, 'white');
+		colorRect(0, paddle1Y, 10, defaultPaddleHeight(), 'white');
+		// Paddle 2
+		colorRect(canvas.width - 10, paddle2Y, 10, defaultPaddleHeight(), 'white');
 		// Draw the ball
-		colorCircle(ballX, ballY, ballDiameter, 'red');
+		colorCircle(ballX, ballY, defaultBallDiameter(), 'red');
 	}
 
 	function drawNet() {
@@ -247,13 +259,13 @@
 	}
 
 	function drawPlayer1Score() {
-		colorTxt(player1Score, 10, 50,
-			"50px Arial", "left", "alphabetic", "blue");
+		colorTxt(player1Score, canvas.width * 0.15, canvas.height * 0.25,
+			defaultGameTextSize() + "px Arial", "left", "alphabetic", "blue");
 	}
 
 	function drawPlayer2Score() {
-		colorTxt(player2Score, canvas.width - 10, 50,
-			"50px Arial", "right", "alphabetic", "red");
+		colorTxt(player2Score, canvas.width - (canvas.width * 0.15), canvas.height * 0.25,
+			defaultGameTextSize() + "px Arial", "right", "alphabetic", "red");
 	}
 
 	function colorRect(leftX, topY, width, height, drawColor) {
@@ -268,11 +280,11 @@
 		ctx.fill();
 	}
 
-	function colorTxt(txt, x, y, font, align, baseAlign, drawColor) {
+	function colorTxt(txt, x, y, font, align, baseline, drawColor) {
 		ctx.font = font;
 		ctx.fillStyle = drawColor;
 		ctx.textAlign = align;
-		ctx.baseAlign = baseAlign;
+		ctx.textBaseline = baseline;
 		ctx.fillText(txt, x, y);
 	}
 
