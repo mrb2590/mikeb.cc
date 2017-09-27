@@ -33,6 +33,8 @@ var lavaImg = new Image();
 lavaImg.src = "/brick-breaker/img/lava.webp";
 var lavaCounter = 0;
 var lavaSpriteTick = 5;
+var lavaSpriteWidth = 200;
+var lavaSpriteHeight = 20;
 
 
 
@@ -92,9 +94,9 @@ function gameLoop(newtime) {
 // Draw a frame
 function drawFrame() {
 	drawBackground();
+	drawBall();
 	drawLava();
 	drawPlayersPaddle();
-	drawBall();
 }
 
 // Update all movement
@@ -149,6 +151,7 @@ function checkPaddleWallCollision() {
 function moveBall() {
 	var deltaX; // The change in the ball's X direction
 
+	// Move the ball ahead
 	ballX += ballSpeedX;
 	ballY += ballSpeedY;
 
@@ -164,12 +167,12 @@ function moveBall() {
 	if (ballY - ballR < 0) {
 		ballSpeedY = -ballSpeedY;
 	}
-	// Bottom ball/wall collision
-	if (ballY + ballR > canvas.height) {
-		// lose life
+	// Bottom ball/lava collision
+	if (ballY + ballR > canvas.height - lavaSpriteHeight) {
+		resetBall();
 	}
 	// Ball/paddle collision
-	if (ballY + ballR >= canvas.height - paddleHeight &&
+	if (ballY + ballR == canvas.height - paddleHeight &&
 		ballX >= paddleX && ballX <= paddleX + paddleWidth) {
 		ballSpeedY = -ballSpeedY;
 		// Change ball direction and speed based
@@ -177,6 +180,14 @@ function moveBall() {
 		deltaX = ballX - (paddleX + (paddleWidth / 2));
 		ballSpeedX = deltaX * 0.35;
 	}
+}
+
+// Reset the ball to the original position
+function resetBall() {
+	ballX = canvas.width / 2;
+	ballY = (canvas.height - paddleHeight) - ballR;
+	ballSpeedX = 15;
+	ballSpeedY = -ballSpeedX / 3;
 }
 
 
@@ -202,6 +213,10 @@ function drawBall() {
 	colorCircle(ballX, ballY, ballR, '#777');
 }
 
+function drawBrick(hitCount) {
+	colorRect(paddleX, paddleY, paddleWidth, paddleHeight, '#eee');
+}
+
 
 
 /**
@@ -210,8 +225,8 @@ function drawBall() {
 
 // Draw the lava sprite
 function drawLava() {
-	for (var i = 0; i < canvas.width; i += 200) {
-		ctx.drawImage(lavaImg, (lavaCounter % 5) * 128 + 10, 115, 100, 20, i, canvas.height - 20, 200, 20);
+	for (var i = 0; i < canvas.width; i += lavaSpriteWidth) {
+		ctx.drawImage(lavaImg, (lavaCounter % 5) * 128 + 10, 115, 100, 20, i, canvas.height - lavaSpriteHeight, 200, 20);
 	}
 	lavaSpriteTick++;
 	if (lavaSpriteTick % 20 === 0) {
