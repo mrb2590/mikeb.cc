@@ -3,9 +3,18 @@ html, body {
 	padding: 0;
 	width: 100%;
 	height: 100%;
-	text-align: center;
 }
-body.hide-cursor,
-body.hide-cursor * {
+
+canvas {
 	cursor: none;
+}
+
+.container {
+	width: 1280px;
+	margin: 0 auto;
+}
+
+.canvas-container {
+	width: 100%;
+	text-align: center;
 }

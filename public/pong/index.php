@@ -180,7 +180,7 @@
 		ballY += ballSpeedY;
 
 		//left-side ball/wall AND ball/paddle collision
-		if (ballX - defaultBallDiameter() < 0) {
+		if (ballX - defaultBallDiameter() / 2 < 0) {
 			if (ballY > paddle1Y && ballY < paddle1Y + defaultPaddleHeight()) {
 				ballSpeedX = -ballSpeedX;
 
@@ -192,7 +192,7 @@
 			}
 		}
 		//right-side ball/wall AND ball/paddle collision
-		if (ballX + defaultBallDiameter() > canvas.width) {
+		if (ballX + defaultBallDiameter() / 2 > canvas.width) {
 			if (ballY > paddle2Y && ballY < paddle2Y + defaultPaddleHeight()) {
 				ballSpeedX = -ballSpeedX;
 
@@ -204,11 +204,11 @@
 			}
 		}
 		//top ball/wall collision
-		if (ballY - defaultBallDiameter() < 0) {
+		if (ballY - defaultBallDiameter() / 2 < 0) {
 			ballSpeedY = -ballSpeedY;
 		}
 		//bottom ball/wall collision
-		if (ballY + defaultBallDiameter() > canvas.height) {
+		if (ballY + defaultBallDiameter() / 2 > canvas.height) {
 			ballSpeedY = -ballSpeedY;
 		}
 	}

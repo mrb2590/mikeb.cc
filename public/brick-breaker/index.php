@@ -8,7 +8,14 @@
 	<link rel="stylesheet" type="text/css" href="css/brick-breaker.css">
 </head>
 <body>
-	<canvas id="gameCanvas" width="1280" height="800"></canvas>
+	<div class="container">
+		<div class="canvas-container">
+			<canvas id="gameCanvas" width="1280" height="800"></canvas>
+		</div>
+		<div class="game-data">
+			<span>Current framerate: <span id="current-fps"></span></span>
+		</div>
+	</div>
 	<script src="js/brick-breaker.js"></script>
 </body>
 </html>
