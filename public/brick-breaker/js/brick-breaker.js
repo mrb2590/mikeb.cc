@@ -2,7 +2,7 @@
 var canvas = document.getElementById('gameCanvas');
 var ctx;
 
-// Game data display
+// Game display data
 var fpsData = document.getElementById('current-fps');
 
 // Game loop data
@@ -36,7 +36,87 @@ var lavaSpriteTick = 5;
 var lavaSpriteWidth = 200;
 var lavaSpriteHeight = 20;
 
+// Game inits
+var currentMap = 0;
+var brokenBricks = 0;
+var mapComplete = false;
+var gameOver = false;
+var livesRemaining = 5;
 
+// Banner
+var bannerHeight = 50;
+
+// Maps
+var maps = [
+	{
+		brickWidth: 256,
+		brickHeight: 40,
+		brickBorderWidth: 2,
+		brickColors: ['red'],
+		bricks: [
+			// Row 1
+			{x: 0, y: bannerHeight, hits: 0},
+			{x: 256, y: bannerHeight, hits: 0},
+			{x: 512, y: bannerHeight, hits: 0},
+			{x: 768, y: bannerHeight, hits: 0},
+			{x: 1024, y: bannerHeight, hits: 0},
+			// Row 2
+			{x: 0, y: bannerHeight + 40, hits: 0},
+			{x: 256, y: bannerHeight + 40, hits: 0},
+			{x: 512, y: bannerHeight + 40, hits: 0},
+			{x: 768, y: bannerHeight + 40, hits: 0},
+			{x: 1024, y: bannerHeight + 40, hits: 0},
+		]
+	},
+	{
+		brickWidth: 256,
+		brickHeight: 40,
+		brickBorderWidth: 2,
+		brickColors: ['blue', 'red'],
+		bricks: [
+			// Row 1
+			{x: 0, y: bannerHeight, hits: 0},
+			{x: 1024, y: bannerHeight, hits: 0},
+			// Row 2
+			{x: 256, y: bannerHeight + 40, hits: 0},
+			{x: 768, y: bannerHeight + 40, hits: 0},
+			// Row 3
+			{x: 256, y: bannerHeight + 80, hits: 0},
+			{x: 768, y: bannerHeight + 80, hits: 0},
+			// Row 4
+			{x: 0, y: bannerHeight + 120, hits: 0},
+			{x: 512, y: bannerHeight + 120, hits: 0},
+			{x: 1024, y: bannerHeight + 120, hits: 0},
+		]
+	},
+	{
+		brickWidth: 256,
+		brickHeight: 40,
+		brickBorderWidth: 2,
+		brickColors: ['green', 'blue', 'red'],
+		bricks: [
+			// Row 1
+			{x: 512, y: bannerHeight + 40, hits: 0},
+			// Row 2
+			{x: 256, y: bannerHeight + 80, hits: 0},
+			{x: 768, y: bannerHeight + 80, hits: 0},
+			// Row 3
+			{x: 256, y: bannerHeight + 120, hits: 0},
+			{x: 768, y: bannerHeight + 120, hits: 0},
+			// Row 4
+			{x: 0, y: bannerHeight + 160, hits: 0},
+			{x: 1024, y: bannerHeight + 160, hits: 0},
+			// Row 5
+			{x: 256, y: bannerHeight + 200, hits: 0},
+			{x: 768, y: bannerHeight + 200, hits: 0},
+			// Row 6
+			{x: 256, y: bannerHeight + 240, hits: 0},
+			{x: 768, y: bannerHeight + 240, hits: 0},
+			// Row 7
+			{x: 512, y: bannerHeight + 280, hits: 0},
+		]
+	}
+];
 
 // Load and start
 window.onload = function() {
@@ -86,20 +166,23 @@ function gameLoop(newtime) {
     }
 }
 
-// Draw a frame
-function drawFrame() {
-	drawBackground();
-	drawMapBricks(0);
-	drawBall();
-	drawLava();
-	drawPlayersPaddle();
-}
-
 // Update all movement
 function update() {
+	if (gameOver) {
+		return;
+	}
 	checkPaddleWallCollision();
-	CheckBrickBallCollision(0);
+	CheckBrickBallCollision(currentMap);
 	moveBall();
+}
+
+// Draw a frame
+function drawFrame() {
+	if (gameOver) {
+		drawGameOver();
+	} else {
+		drawGameplay();
+	}
 }
 
 
@@ -109,19 +192,79 @@ function update() {
  */
 
 function bindEventListeners() {
+	// Touch mimic mouse for mobile
+	setupTouchControlls();
 	// Have the paddle follow the mouse
 	canvas.addEventListener('mousemove', function(evt) {
 			var mousePos = calculateMousePos(evt);
 			paddleX = mousePos.x - paddleWidth / 2;
 		}
 	);
+	// Reset the game during game over
+	canvas.addEventListener('mousedown', function(evt) {
+			if (gameOver) {
+				resetGame();
+			}
+		}
+	);
+}
+
+// Touch mimic mouse for mobile
+function setupTouchControlls() {
+	// Set up touch events for mobile, etc
+	canvas.addEventListener("touchstart", function (e) {
+					mousePos = getTouchPos(canvas, e);
+		var touch = e.touches[0];
+		var mouseEvent = new MouseEvent("mousedown", {
+			clientX: touch.clientX,
+			clientY: touch.clientY
+		});
+		canvas.dispatchEvent(mouseEvent);
+	}, false);
+	canvas.addEventListener("touchend", function (e) {
+		var mouseEvent = new MouseEvent("mouseup", {});
+		canvas.dispatchEvent(mouseEvent);
+	}, false);
+	canvas.addEventListener("touchmove", function (e) {
+		var touch = e.touches[0];
+		var mouseEvent = new MouseEvent("mousemove", {
+			clientX: touch.clientX,
+			clientY: touch.clientY
+		});
+		canvas.dispatchEvent(mouseEvent);
+	}, false);
+
+	// Get the position of a touch relative to the canvas
+	function getTouchPos(canvasDom, touchEvent) {
+		var rect = canvasDom.getBoundingClientRect();
+		return {
+			x: touchEvent.touches[0].clientX - rect.left,
+			y: touchEvent.touches[0].clientY - rect.top
+		};
+	}
 }
 
 
 
 /**
- * Movement Functions
+ * Logic & Movement Functions
  */
+
+// Reset the game
+function resetGame() {
+	currentMap = 0;
+	brokenBricks = 0;
+	mapComplete = false;
+	gameOver = false;
+	livesRemaining = 5;
+	resetBall();
+	// Reset all bricks
+	for (var i = 0; i < maps.length; i++) {
+		for (var j = 0; j < maps[i].bricks.length; j++) {
+			maps[i].bricks[j].hits = 0;
+		}
+	}
+}
 
 // Calculate the mouse x and y position
 function calculateMousePos(evt) {
@@ -160,13 +303,18 @@ function moveBall() {
 	if (ballX + ballR > canvas.width) {
 		ballSpeedX = -ballSpeedX;
 	}
-	// Top ball/wall collision
-	if (ballY - ballR < 0) {
+	// Top ball/banner collision
+	if (ballY - ballR < bannerHeight) {
 		ballSpeedY = -ballSpeedY;
 	}
 	// Bottom ball/lava collision
 	if (ballY + ballR > canvas.height - lavaSpriteHeight) {
-		resetBall();
+		livesRemaining--;
+		if (livesRemaining === 0) {
+			gameOver = true;
+		} else {
+			resetBall();
+		}
 	}
 	// Ball/paddle collision
 	if (ballY + ballR == canvas.height - paddleHeight &&
@@ -190,7 +338,7 @@ function resetBall() {
 // Check for brick/ball collision, if so add 1 to hit and change color,
 // if the brick has 3 hits, remove it
 // if there are no bricks left, end map
-function CheckBrickBallCollision(currentMap) {
+function CheckBrickBallCollision() {
 	// Check if ball is colliding with each brick
 	for (var i = 0; i < maps[currentMap].bricks.length; i++) {
 		// console.log(maps[currentMap].bricks[i]);
@@ -230,6 +378,52 @@ function CheckBrickBallCollision(currentMap) {
 			maps[currentMap].bricks[i].hits++;
 			ballSpeedY = -ballSpeedY;
 		}
+
+		// Update total bricks broken
+		if (maps[currentMap].bricks[i].hits == maps[currentMap].brickColors.length) {
+			brokenBricks++;
+		}
+
+		// Check if all bricks are broken
+		// con
+		if (brokenBricks >= maps[currentMap].bricks.length) {
+			brokenBricks = 0;
+			currentMap++;
+			resetBall();
+			if (currentMap === maps.length) {
+				gameOver = true;
+			} else {
+				mapComplete = true;
+			}
+			return;
+		}
+	}
+}
+
+
+
+/**
+ * Game Scenes
+ */
+
+// Draw the main game
+function drawGameplay() {
+	drawBackground();
+	drawBanner();
+	drawMapBricks(currentMap);
+	drawBall();
+	drawLava();
+	drawPlayersPaddle();
+}
+
+// Draw the game over screen
+function drawGameOver() {
+	drawBackground();
+	drawBanner();
+	if (livesRemaining === 0) {
+		colorTxt('OUT OF LIVES', canvas.width / 2, canvas.height / 2, '100px Arial', 'center', 'middle', '#fff');
+	} else {
+		colorTxt('GAME COMPLETE', canvas.width / 2, canvas.height / 2, '100px Arial', 'center', 'middle', '#fff');
 	}
 }
 
@@ -256,7 +450,7 @@ function drawBall() {
 }
 
 // Draw the map's bricks
-function drawMapBricks(currentMap) {
+function drawMapBricks() {
 	for (var i = 0; i < maps[currentMap].bricks.length; i++) {
 		// Check if brick exists, if not skip
 		if (maps[currentMap].bricks[i].hits >= maps[currentMap].brickColors.length) {
@@ -269,8 +463,18 @@ function drawMapBricks(currentMap) {
 		colorRect(maps[currentMap].bricks[i].x + maps[currentMap].brickBorderWidth,
 			maps[currentMap].bricks[i].y + maps[currentMap].brickBorderWidth,
 			maps[currentMap].brickWidth - (maps[currentMap].brickBorderWidth * 2),
-			maps[currentMap].brickHeight - (maps[currentMap].brickBorderWidth * 2), maps[currentMap].brickColors[maps[currentMap].bricks[i].hits]);
+			maps[currentMap].brickHeight - (maps[currentMap].brickBorderWidth * 2), '#111');
 	}
+}
+
+// Draw the game banner
+function drawBanner() {
+	// Background
+	colorRect(0, 0, canvas.width, bannerHeight, '#ffbc40');
+	// Current level
+	colorTxt('Level: '+(currentMap + 1), 50, bannerHeight / 2, '30px Arial', 'left', 'middle', '#333');
+	// Lives left
+	colorTxt('Lives: ' + livesRemaining, canvas.width - 50, bannerHeight / 2, '30px Arial', 'right', 'middle', '#333');
 }
 
 
@@ -308,6 +512,15 @@ function colorCircle(centerX, centerY, radius, drawColor) {
 	ctx.beginPath();
 	ctx.arc(centerX, centerY, radius, 0, Math.PI*2, true);
 	ctx.fill();
+}
+
+// Text
+function colorTxt(txt, x, y, font, align, baseline, drawColor) {
+	ctx.font = font;
+	ctx.fillStyle = drawColor;
+	ctx.textAlign = align;
+	ctx.textBaseline = baseline;
+	ctx.fillText(txt, x, y);
 }
 
 

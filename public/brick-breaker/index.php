@@ -16,7 +16,6 @@
 			<span>Current framerate: <span id="current-fps"></span></span>
 		</div>
 	</div>
-	<script src="js/maps.js"></script>
 	<script src="js/brick-breaker.js"></script>
 </body>
 </html>
