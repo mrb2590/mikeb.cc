@@ -41,17 +41,12 @@ var lavaSpriteHeight = 20;
 // Load and start
 window.onload = function() {
 	ctx = canvas.getContext('2d');
-
 	bindEventListeners();
-
-	// setInterval(function() {
-	// 	update();
-	// 	drawFrame();
-	// }, 1000 / frameRate);
-
 	startGameLoop();
 };
 
+
+// Start the game loop
 function startGameLoop() {
     fpsInterval = 1000 / framerate;
     then = window.performance.now();
@@ -94,6 +89,7 @@ function gameLoop(newtime) {
 // Draw a frame
 function drawFrame() {
 	drawBackground();
+	drawMapBricks(0);
 	drawBall();
 	drawLava();
 	drawPlayersPaddle();
@@ -102,6 +98,7 @@ function drawFrame() {
 // Update all movement
 function update() {
 	checkPaddleWallCollision();
+	CheckBrickBallCollision(0);
 	moveBall();
 }
 
@@ -190,6 +187,51 @@ function resetBall() {
 	ballSpeedY = -ballSpeedX / 3;
 }
 
+// Check for brick/ball collision, if so add 1 to hit and change color,
+// if the brick has 3 hits, remove it
+// if there are no bricks left, end map
+function CheckBrickBallCollision(currentMap) {
+	// Check if ball is colliding with each brick
+	for (var i = 0; i < maps[currentMap].bricks.length; i++) {
+		// console.log(maps[currentMap].bricks[i]);
+		// Check if brick still exists, skip if not
+		if (maps[currentMap].bricks[i].hits >= maps[currentMap].brickColors.length) {
+			continue;
+		}
+		// Right-side of brick collision
+		if (ballX - ballR < maps[currentMap].bricks[i].x + maps[currentMap].brickWidth &&
+			ballX + ballR > maps[currentMap].bricks[i].x + maps[currentMap].brickWidth &&
+			ballY >= maps[currentMap].bricks[i].y &&
+			ballY <= maps[currentMap].bricks[i].y + maps[currentMap].brickHeight) {
+			maps[currentMap].bricks[i].hits++;
+			ballSpeedX = -ballSpeedX;
+		}
+		// Left-side of brick collision
+		else if (ballX + ballR > maps[currentMap].bricks[i].x &&
+			ballX - ballR < maps[currentMap].bricks[i].x &&
+			ballY >= maps[currentMap].bricks[i].y &&
+			ballY <= maps[currentMap].bricks[i].y + maps[currentMap].brickHeight) {
+			maps[currentMap].bricks[i].hits++;
+			ballSpeedX = -ballSpeedX;
+		}
+		// Top of brick collision
+		else if (ballY + ballR > maps[currentMap].bricks[i].y &&
+			ballY - ballR < maps[currentMap].bricks[i].y &&
+			ballX >= maps[currentMap].bricks[i].x &&
+			ballX <= maps[currentMap].bricks[i].x + maps[currentMap].brickWidth) {
+			maps[currentMap].bricks[i].hits++;
+			ballSpeedY = -ballSpeedY;
+		}
+		// Bottom of brick collision
+		else if (ballY - ballR < maps[currentMap].bricks[i].y + maps[currentMap].brickHeight &&
+			ballY + ballR > maps[currentMap].bricks[i].y + maps[currentMap].brickHeight &&
+			ballX >= maps[currentMap].bricks[i].x &&
+			ballX <= maps[currentMap].bricks[i].x + maps[currentMap].brickWidth) {
+			maps[currentMap].bricks[i].hits++;
+			ballSpeedY = -ballSpeedY;
+		}
+	}
+}
 
 
 
@@ -213,8 +255,22 @@ function drawBall() {
 	colorCircle(ballX, ballY, ballR, '#777');
 }
 
-function drawBrick(hitCount) {
-	colorRect(paddleX, paddleY, paddleWidth, paddleHeight, '#eee');
+// Draw the map's bricks
+function drawMapBricks(currentMap) {
+	for (var i = 0; i < maps[currentMap].bricks.length; i++) {
+		// Check if brick exists, if not skip
+		if (maps[currentMap].bricks[i].hits >= maps[currentMap].brickColors.length) {
+			continue;
+		}
+		// Border
+		colorRect(maps[currentMap].bricks[i].x, maps[currentMap].bricks[i].y,
+			maps[currentMap].brickWidth, maps[currentMap].brickHeight, maps[currentMap].brickColors[maps[currentMap].bricks[i].hits]);
+		// Fill
+		colorRect(maps[currentMap].bricks[i].x + maps[currentMap].brickBorderWidth,
+			maps[currentMap].bricks[i].y + maps[currentMap].brickBorderWidth,
+			maps[currentMap].brickWidth - (maps[currentMap].brickBorderWidth * 2),
+			maps[currentMap].brickHeight - (maps[currentMap].brickBorderWidth * 2), maps[currentMap].brickColors[maps[currentMap].bricks[i].hits]);
+	}
 }
 
 
@@ -253,3 +309,5 @@ function colorCircle(centerX, centerY, radius, drawColor) {
 	ctx.arc(centerX, centerY, radius, 0, Math.PI*2, true);
 	ctx.fill();
 }
+
+
