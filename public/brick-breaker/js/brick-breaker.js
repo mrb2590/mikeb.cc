@@ -18,15 +18,30 @@ var elapsed;
 // Player's paddle
 var paddleWidth = 200;
 var paddleHeight = 25;
-var paddleX = (canvas.width/2)-(paddleWidth/2);
-var paddleY = canvas.height - paddleHeight;
+var startPaddleX = (canvas.width/2)-(paddleWidth/2);
+var startPaddleY = canvas.height - paddleHeight;
+var paddleX = startPaddleX;
+var paddleY = startPaddleY;
 
 // Ball
 var ballR = 14;
-var ballX = canvas.width / 2;
-var ballY = (canvas.height - paddleHeight) - ballR;
-var ballSpeedX = 15;
-var ballSpeedY = -ballSpeedX / 3;
+var startBallX = canvas.width / 2;
+var startBallY = (canvas.height - paddleHeight) - ballR - 5;
+var ballX = startBallX;
+var ballY = startBallY;
+var startBallSpeedX = 15;
+var startBallSpeedY = -startBallSpeedX / 3;
+var ballSpeedX = 0;
+var ballSpeedY = 0;
+
+// Ball aimer
+var ballAimerAX = startBallX;
+var ballAimerAY = startBallY;
+var ballAimerBX = canvas.width / 2;
+var ballAimerBY = canvas.height - 100;
+var maxBallAimerLength = 50;
+var maxBallAimerHeight = canvas.height - 100;
+var maxBallAimerDeltaX = paddleWidth / 2;
 
 // Image locations
 var lavaImg = new Image();
@@ -42,6 +57,7 @@ var brokenBricks = 0;
 var mapComplete = false;
 var gameOver = false;
 var livesRemaining = 5;
+var roundStart = true;
 
 // Banner
 var bannerHeight = 50;
@@ -72,7 +88,7 @@ var maps = [
 		brickWidth: 256,
 		brickHeight: 40,
 		brickBorderWidth: 2,
-		brickColors: ['blue', 'red'],
+		brickColors: ['yellow', 'red'],
 		bricks: [
 			// Row 1
 			{x: 0, y: bannerHeight, hits: 0},
@@ -93,7 +109,7 @@ var maps = [
 		brickWidth: 256,
 		brickHeight: 40,
 		brickBorderWidth: 2,
-		brickColors: ['green', 'blue', 'red'],
+		brickColors: ['green', 'orange', 'red'],
 		bricks: [
 			// Row 1
 			{x: 512, y: bannerHeight + 40, hits: 0},
@@ -114,6 +130,51 @@ var maps = [
 			{x: 768, y: bannerHeight + 240, hits: 0},
 			// Row 7
 			{x: 512, y: bannerHeight + 280, hits: 0},
+		]
+	},
+	{
+		brickWidth: 100,
+		brickHeight: 40,
+		brickBorderWidth: 2,
+		brickColors: ['green', 'orange', 'red'],
+		bricks: [
+			// Row 1
+			{x: 100, y: bannerHeight + 40, hits: 0},
+			{x: 200, y: bannerHeight + 40, hits: 0},
+			{x: 500, y: bannerHeight + 40, hits: 0},
+			{x: 600, y: bannerHeight + 40, hits: 0},
+			{x: 700, y: bannerHeight + 40, hits: 0},
+			{x: 900, y: bannerHeight + 40, hits: 0},
+			{x: 1000, y: bannerHeight + 40, hits: 0},
+			// Row 2
+			{x: 100, y: bannerHeight + 80, hits: 0},
+			{x: 300, y: bannerHeight + 80, hits: 0},
+			{x: 500, y: bannerHeight + 80, hits: 0},
+			{x: 700, y: bannerHeight + 80, hits: 0},
+			{x: 900, y: bannerHeight + 80, hits: 0},
+			{x: 1100, y: bannerHeight + 80, hits: 0},
+			// Row 3
+			{x: 100, y: bannerHeight + 120, hits: 0},
+			{x: 200, y: bannerHeight + 120, hits: 0},
+			{x: 500, y: bannerHeight + 120, hits: 0},
+			{x: 700, y: bannerHeight + 120, hits: 0},
+			{x: 900, y: bannerHeight + 120, hits: 0},
+			{x: 1000, y: bannerHeight + 120, hits: 0},
+			// Row 4
+			{x: 100, y: bannerHeight + 160, hits: 0},
+			{x: 300, y: bannerHeight + 160, hits: 0},
+			{x: 500, y: bannerHeight + 160, hits: 0},
+			{x: 700, y: bannerHeight + 160, hits: 0},
+			{x: 900, y: bannerHeight + 160, hits: 0},
+			{x: 1100, y: bannerHeight + 160, hits: 0},
+			// Row 5
+			{x: 100, y: bannerHeight + 200, hits: 0},
+			{x: 200, y: bannerHeight + 200, hits: 0},
+			{x: 500, y: bannerHeight + 200, hits: 0},
+			{x: 600, y: bannerHeight + 200, hits: 0},
+			{x: 700, y: bannerHeight + 200, hits: 0},
+			{x: 900, y: bannerHeight + 200, hits: 0},
+			{x: 1000, y: bannerHeight + 200, hits: 0},
 		]
 	}
 ];
@@ -197,13 +258,28 @@ function bindEventListeners() {
 	// Have the paddle follow the mouse
 	canvas.addEventListener('mousemove', function(evt) {
 			var mousePos = calculateMousePos(evt);
-			paddleX = mousePos.x - paddleWidth / 2;
+			if (roundStart) {
+				var angleRad = Math.atan2(mousePos.y - ballAimerAY, mousePos.x - ballAimerAX);
+				ballAimerBX = ballAimerAX + (maxBallAimerLength * Math.cos(angleRad));
+				ballAimerBY =  ballAimerAY + (maxBallAimerLength * Math.sin(angleRad));
+			} else {
+				paddleX = mousePos.x - paddleWidth / 2;
+			}
 		}
 	);
 	// Reset the game during game over
 	canvas.addEventListener('mousedown', function(evt) {
-			if (gameOver) {
+			if (roundStart) {
+				// Set the ball speed based on the ball aimer
+				// Find the slope
+				ballSpeedX = (ballAimerBX - ballAimerAX) * 0.15;
+				ballSpeedY = (ballAimerBY - ballAimerAY) * 0.15;
+				// ballSpeedX = startBallSpeedX;
+				// ballSpeedY = startBallSpeedY;
+				roundStart = false;
+			} else if (gameOver) {
 				resetGame();
+				roundStart = true;
 			}
 		}
 	);
@@ -258,12 +334,27 @@ function resetGame() {
 	gameOver = false;
 	livesRemaining = 5;
 	resetBall();
+	resetPaddle();
 	// Reset all bricks
 	for (var i = 0; i < maps.length; i++) {
 		for (var j = 0; j < maps[i].bricks.length; j++) {
 			maps[i].bricks[j].hits = 0;
 		}
 	}
+}
+
+// Reset the ball to the original position
+function resetBall() {
+	ballX = startBallX;
+	ballY = startBallY;
+	ballSpeedX = 0;
+	ballSpeedY = 0;
+}
+
+// Reset the player's paddle to the original position
+function resetPaddle() {
+	paddleX = startPaddleX;
+	paddleY = startPaddleY;
 }
 
 // Calculate the mouse x and y position
@@ -308,31 +399,25 @@ function moveBall() {
 		ballSpeedY = -ballSpeedY;
 	}
 	// Bottom ball/lava collision
-	if (ballY + ballR > canvas.height - lavaSpriteHeight) {
+	if (ballY + ballR > canvas.height) {
 		livesRemaining--;
 		if (livesRemaining === 0) {
 			gameOver = true;
 		} else {
 			resetBall();
+			resetPaddle();
+			roundStart = true;
 		}
 	}
 	// Ball/paddle collision
-	if (ballY + ballR == canvas.height - paddleHeight &&
+	if (ballY + ballR > canvas.height - paddleHeight &&
 		ballX >= paddleX && ballX <= paddleX + paddleWidth) {
 		ballSpeedY = -ballSpeedY;
 		// Change ball direction and speed based
 		// on where on the paddle it was hit
 		deltaX = ballX - (paddleX + (paddleWidth / 2));
-		ballSpeedX = deltaX * 0.35;
+		ballSpeedX = deltaX * 0.15;
 	}
-}
-
-// Reset the ball to the original position
-function resetBall() {
-	ballX = canvas.width / 2;
-	ballY = (canvas.height - paddleHeight) - ballR;
-	ballSpeedX = 15;
-	ballSpeedY = -ballSpeedX / 3;
 }
 
 // Check for brick/ball collision, if so add 1 to hit and change color,
@@ -390,6 +475,8 @@ function CheckBrickBallCollision() {
 			brokenBricks = 0;
 			currentMap++;
 			resetBall();
+			resetPaddle();
+			roundStart = true;
 			if (currentMap === maps.length) {
 				gameOver = true;
 			} else {
@@ -411,6 +498,9 @@ function drawGameplay() {
 	drawBackground();
 	drawBanner();
 	drawMapBricks(currentMap);
+	if (roundStart) {
+		drawBallAimer();
+	}
 	drawBall();
 	drawLava();
 	drawPlayersPaddle();
@@ -441,7 +531,10 @@ function drawBackground() {
 
 // Draw the player's paddle
 function drawPlayersPaddle() {
+	// Paddle
 	colorRect(paddleX, paddleY, paddleWidth, paddleHeight, '#eee');
+	// Center line
+	colorRect(paddleX + (paddleWidth / 2) - 2, canvas.height - (paddleHeight / 2), 4, paddleHeight / 2, '#333');
 }
 
 // Draw the ball
@@ -475,6 +568,17 @@ function drawBanner() {
 	colorTxt('Level: '+(currentMap + 1), 50, bannerHeight / 2, '30px Arial', 'left', 'middle', '#333');
 	// Lives left
 	colorTxt('Lives: ' + livesRemaining, canvas.width - 50, bannerHeight / 2, '30px Arial', 'right', 'middle', '#333');
+}
+
+// Draw the round start ball aimer
+function drawBallAimer() {
+	ctx.beginPath();
+	ctx.moveTo(ballAimerAX, ballAimerAY);
+	ctx.lineTo(ballAimerBX, ballAimerBY);
+	ctx.lineWidth = 3;
+	ctx.strokeStyle = '#fff';
+	ctx.lineCap = 'round';
+	ctx.stroke();
 }
 
 
